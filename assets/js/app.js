@@ -138,11 +138,14 @@ class ParticleEffect {
 // 工具函数
 // =====================================
 const Utils = {
-    api: async (action, data = null, method = 'GET') => {
+    api: async (action, data = null, method = null) => {
         let url = `api.php?action=${action}`;
+        // 自动判断：传了 data 且未指定 method 时默认 POST，否则 GET
+        if (method === null) {
+            method = data ? 'POST' : 'GET';
+        }
         const options = { method };
         if (data && method === 'GET') {
-            // GET 请求，将 data 作为查询参数
             const params = new URLSearchParams(data);
             url += '&' + params.toString();
         } else if (data) {
@@ -422,7 +425,7 @@ const App = {
     async renderItemList(container, type) {
         const pageTitle = Utils.typeLabel(type);
         const pageIcon = Utils.typeIcon(type);
-        const result = await Utils.api('get_items', { type });
+        const result = await Utils.api('get_items', { type }, 'GET');
         const items = result.items || [];
 
         let listHtml;
@@ -480,7 +483,12 @@ const App = {
         if (type === 'server') {
             const services = details.services || [];
             extraCol = `<td>
-                ${services.length > 0 ? services.map(s => `<span class="service-tag">${Utils.escapeHtml(s)}</span>`).join(' ') : '<span style="color:var(--text-muted)">-</span>'}
+                ${services.length > 0 ? services.map(s => {
+                    const sName = typeof s === 'string' ? s : (s.name || '');
+                    const sUrl = typeof s === 'string' ? '' : (s.url || '');
+                    const display = sUrl ? `${Utils.escapeHtml(sName)} <span style="color:var(--text-muted);font-size:11px;">(${Utils.escapeHtml(sUrl)})</span>` : Utils.escapeHtml(sName);
+                    return `<span class="service-tag">${display}</span>`;
+                }).join(' ') : '<span style="color:var(--text-muted)">-</span>'}
             </td>`;
         }
         if (type === 'certificate' || type === 'icp') {
@@ -537,7 +545,7 @@ const App = {
 
     async openEditModal(id) {
         try {
-            const data = await Utils.api('get_item', { id });
+            const data = await Utils.api('get_item', { id }, 'GET');
             this.showItemForm(data, data.type, data.reminder_days || [30, 15, 7, 1]);
         } catch(e) {
             Utils.toast(e.message, 'error');
@@ -564,13 +572,24 @@ const App = {
                     <input class="form-input" id="formProvider" value="${Utils.escapeHtml(provider)}" placeholder="例如：阿里云、腾讯云、Vultr">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">📦 提供的服务</label>
-                    <div class="services-input-row">
-                        <input class="form-input" id="formServiceInput" placeholder="输入服务名称" onkeydown="if(event.key==='Enter'){event.preventDefault();App.addServiceTag()}">
-                        <button class="btn btn-sm btn-secondary" onclick="App.addServiceTag()">添加</button>
+                    <label class="form-label">📦 提供的服务
+                        <span style="font-size:12px;color:var(--text-muted);font-weight:400">（应用名称 + 访问地址）</span>
+                    </label>
+                    <div class="services-input-row" style="display:flex;gap:6px;flex-wrap:wrap;">
+                        <input class="form-input" id="formServiceName" placeholder="服务名称（如：读书站点）" style="flex:1;min-width:120px;" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('formServiceUrl').focus()}">
+                        <input class="form-input" id="formServiceUrl" placeholder="访问地址（如：123.123.123.123:8080）" style="flex:1;min-width:160px;" onkeydown="if(event.key==='Enter'){event.preventDefault();App.addServiceTag()}">
+                        <button class="btn btn-sm btn-secondary" onclick="App.addServiceTag()" style="flex-shrink:0;">➕ 添加</button>
                     </div>
                     <div class="services-container" id="servicesContainer">
-                        ${services.map(s => `<span class="service-tag">${Utils.escapeHtml(s)}<span class="remove" onclick="this.parentElement.remove()">×</span></span>`).join('')}
+                        ${services.map(s => {
+                            const name = typeof s === 'string' ? s : (s.name || '');
+                            const url = typeof s === 'string' ? '' : (s.url || '');
+                            return `<span class="service-tag" data-name="${Utils.escapeHtml(name)}" data-url="${Utils.escapeHtml(url)}">
+                                ${Utils.escapeHtml(name)}
+                                ${url ? `<span style="color:var(--text-muted);font-size:11px;margin-left:2px;">(${Utils.escapeHtml(url)})</span>` : ''}
+                                <span class="remove" onclick="this.parentElement.remove()">×</span>
+                            </span>`;
+                        }).join('')}
                     </div>
                 </div>
             `;
@@ -671,8 +690,9 @@ const App = {
             details.provider = document.getElementById('formProvider')?.value.trim() || '';
             const services = [];
             document.querySelectorAll('#servicesContainer .service-tag').forEach(tag => {
-                const text = tag.textContent.replace('×', '').trim();
-                if (text) services.push(text);
+                const sName = tag.dataset.name || tag.textContent.replace('×', '').trim();
+                const sUrl = tag.dataset.url || '';
+                services.push({ name: sName, url: sUrl });
             });
             details.services = services;
         }
@@ -711,22 +731,29 @@ const App = {
     },
 
     addServiceTag() {
-        const input = document.getElementById('formServiceInput');
+        const nameInput = document.getElementById('formServiceName');
+        const urlInput = document.getElementById('formServiceUrl');
         const container = document.getElementById('servicesContainer');
-        const text = input.value.trim();
-        if (!text) return;
+        const name = nameInput.value.trim();
+        const url = urlInput.value.trim();
+        if (!name) { Utils.toast('请输入服务名称', 'warning'); nameInput.focus(); return; }
+
         // 去重检查
         let exists = false;
         container.querySelectorAll('.service-tag').forEach(tag => {
-            if (tag.textContent.replace('×', '').trim() === text) exists = true;
+            if (tag.dataset.name === name && tag.dataset.url === url) exists = true;
         });
         if (exists) { Utils.toast('该服务已存在', 'warning'); return; }
+
         const tag = document.createElement('span');
         tag.className = 'service-tag';
-        tag.innerHTML = `${Utils.escapeHtml(text)}<span class="remove" onclick="this.parentElement.remove()">×</span>`;
+        tag.dataset.name = name;
+        tag.dataset.url = url;
+        tag.innerHTML = `${Utils.escapeHtml(name)}${url ? `<span style="color:var(--text-muted);font-size:11px;margin-left:2px;">(${Utils.escapeHtml(url)})</span>` : ''}<span class="remove" onclick="this.parentElement.remove()">×</span>`;
         container.appendChild(tag);
-        input.value = '';
-        input.focus();
+        nameInput.value = '';
+        urlInput.value = '';
+        nameInput.focus();
     },
 
     async deleteItem(id) {

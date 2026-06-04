@@ -56,7 +56,11 @@ function sendReminderEmail(array $item, string $triggerReason = ''): bool {
         if (count($services) > 0) {
             $servicesHtml = '<p><strong>📦 提供的服务：</strong></p><ul>';
             foreach ($services as $svc) {
-                $servicesHtml .= '<li>' . htmlspecialchars($svc) . '</li>';
+                $svcName = is_string($svc) ? $svc : ($svc['name'] ?? '');
+                $svcUrl = is_string($svc) ? '' : ($svc['url'] ?? '');
+                $display = $svcName;
+                if ($svcUrl) $display .= ' (' . htmlspecialchars($svcUrl) . ')';
+                $servicesHtml .= '<li>' . htmlspecialchars($display) . '</li>';
             }
             $servicesHtml .= '</ul>';
         }
