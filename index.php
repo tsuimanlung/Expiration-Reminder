@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>到期提醒系统 - Expiration Reminder</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⏰</text></svg>">
+</head>
+<body>
+    <!-- 鼠标粒子画布 -->
+    <canvas id="particleCanvas"></canvas>
+
+    <!-- 背景网格 -->
+    <div class="bg-grid"></div>
+
+    <!-- 侧边栏 -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <span class="logo-icon">⏰</span>
+                <span class="logo-text">到期提醒</span>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="#" class="nav-item active" data-page="dashboard">
+                <span class="nav-icon">📊</span>
+                <span class="nav-label">仪表盘</span>
+            </a>
+            <a href="#" class="nav-item" data-page="server">
+                <span class="nav-icon">🖥️</span>
+                <span class="nav-label">云服务器</span>
+            </a>
+            <a href="#" class="nav-item" data-page="certificate">
+                <span class="nav-icon">🔒</span>
+                <span class="nav-label">SSL证书</span>
+            </a>
+            <a href="#" class="nav-item" data-page="icp">
+                <span class="nav-icon">📄</span>
+                <span class="nav-label">ICP备案</span>
+            </a>
+            <a href="#" class="nav-item" data-page="birthday">
+                <span class="nav-icon">🎂</span>
+                <span class="nav-label">生日提醒</span>
+            </a>
+            <a href="#" class="nav-item" data-page="other">
+                <span class="nav-icon">📋</span>
+                <span class="nav-label">其他提醒</span>
+            </a>
+            <div class="nav-divider"></div>
+            <a href="#" class="nav-item" data-page="settings">
+                <span class="nav-icon">⚙️</span>
+                <span class="nav-label">系统设置</span>
+            </a>
+            <a href="#" class="nav-item" data-page="logs">
+                <span class="nav-icon">📝</span>
+                <span class="nav-label">发送日志</span>
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <span class="version">v1.0.0</span>
+        </div>
+    </aside>
+
+    <!-- 移动端菜单按钮 -->
+    <button class="menu-toggle" id="menuToggle">☰</button>
+
+    <!-- 主内容区 -->
+    <main class="main-content" id="mainContent">
+        <!-- 页面容器 -->
+        <div id="pageContainer"></div>
+    </main>
+
+    <!-- 模态框 -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-content" id="modalContent">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">标题</h3>
+                <button class="modal-close" id="modalClose">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- 动态内容 -->
+            </div>
+            <div class="modal-footer" id="modalFooter">
+                <button class="btn btn-secondary" id="modalCancel">取消</button>
+                <button class="btn btn-primary" id="modalConfirm">确认</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast 通知 -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- 加载动画 -->
+    <div class="loader-overlay" id="loaderOverlay" style="display:none;">
+        <div class="loader">
+            <div class="loader-spinner"></div>
+            <div class="loader-text">加载中...</div>
+        </div>
+    </div>
+
+    <script src="assets/js/app.js"></script>
+</body>
+</html>
