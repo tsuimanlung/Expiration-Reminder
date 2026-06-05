@@ -14,7 +14,7 @@
 </p>
 
 <p align="center">
-  <strong>🌐 在线演示：</strong> <a href="http://152.69.196.73:8080">http://152.69.196.73:8080</a>
+  <strong>🔗 生产环境：</strong> <a href="http://152.69.196.73:8080">http://152.69.196.73:8080</a>
 </p>
 
 <p align="center">
