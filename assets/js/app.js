@@ -259,6 +259,8 @@ const Auth = {
     showLogin() {
         document.getElementById('authOverlay').style.display = 'flex';
         document.getElementById('appContainer').style.display = 'none';
+        document.getElementById('authSetup').style.display = 'none';
+        document.getElementById('authLogin').style.display = 'block';
         const pw = document.getElementById('loginPassword');
         if (pw) pw.value = '';
     },
@@ -268,6 +270,11 @@ const Auth = {
         document.getElementById('appContainer').style.display = 'none';
         document.getElementById('authLogin').style.display = 'none';
         document.getElementById('authSetup').style.display = 'block';
+    },
+
+    hide() {
+        document.getElementById('authOverlay').style.display = 'none';
+        document.getElementById('appContainer').style.display = 'flex';
     },
 
     async login() {
@@ -280,8 +287,7 @@ const Auth = {
             Utils.showLoader(true);
             await Utils.api('login', { username, password });
             Utils.toast('登录成功', 'success');
-            document.getElementById('authOverlay').style.display = 'none';
-            document.getElementById('appContainer').style.display = 'flex';
+            Auth.hide();
             await App.initApp();
         } catch (e) {
             Utils.toast(e.message, 'error');
