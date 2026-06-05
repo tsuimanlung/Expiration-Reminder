@@ -16,10 +16,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 require_once __DIR__ . '/functions.php';
 
+// 初始化会话
+initSession();
+
 $action = $_REQUEST['action'] ?? '';
 
 try {
+    // 公开接口（不需要登录）
+    $publicActions = ['login', 'check_auth', 'setup_password'];
+
+    if (!in_array($action, $publicActions)) {
+        requireAuth();
+    }
+
     switch ($action) {
+        case 'check_auth':
+            echo json_encode(apiCheckAuth());
+            break;
+        case 'login':
+            echo json_encode(apiLogin());
+            break;
+        case 'logout':
+            echo json_encode(apiLogout());
+            break;
+        case 'setup_password':
+            echo json_encode(apiSetupPassword());
+            break;
+        case 'change_password':
+            echo json_encode(apiChangePassword());
+            break;
         case 'get_dashboard':
             echo json_encode(apiGetDashboard());
             break;
@@ -56,6 +81,132 @@ try {
 } catch (Exception $e) {
     http_response_code(400);
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+}
+
+// =================== 认证 API ===================
+
+function apiCheckAuth(): array {
+    $passwordSet = isPasswordSet();
+    return [
+        'success' => true,
+        'data' => [
+            'authenticated' => isAuthenticated(),
+            'password_set' => $passwordSet,
+        ]
+    ];
+}
+
+function apiLogin(): array {
+    $input = json_decode(file_get_contents('php://input'), true);
+    if (!$input) throw new Exception('无效的请求数据');
+
+    $username = trim($input['username'] ?? '');
+    $password = $input['password'] ?? '';
+
+    if (!$username || !$password) {
+        throw new Exception('请输入账号和密码');
+    }
+
+    $storedHash = getWebPassword();
+    $storedUser = getWebUsername();
+
+    if (!$storedHash) {
+        throw new Exception('尚未设置登录密码，请先完成初始设置');
+    }
+
+    if ($username !== $storedUser) {
+        throw new Exception('账号或密码错误');
+    }
+
+    if (!password_verify($password, $storedHash)) {
+        throw new Exception('账号或密码错误');
+    }
+
+    initSession();
+    $_SESSION['authenticated'] = true;
+    $_SESSION['username'] = $username;
+    session_regenerate_id(true);
+
+    return ['success' => true, 'message' => '登录成功'];
+}
+
+function apiLogout(): array {
+    initSession();
+    $_SESSION = [];
+    session_destroy();
+    return ['success' => true, 'message' => '已退出登录'];
+}
+
+/**
+ * 首次设置密码
+ */
+function apiSetupPassword(): array {
+    if (isPasswordSet()) {
+        throw new Exception('密码已设置，不能重复初始化');
+    }
+
+    $input = json_decode(file_get_contents('php://input'), true);
+    if (!$input) throw new Exception('无效的请求数据');
+
+    $username = trim($input['username'] ?? '');
+    $password = $input['password'] ?? '';
+
+    if (!$username) throw new Exception('请输入账号');
+    if (strlen($username) < 2) throw new Exception('账号至少2个字符');
+    if (!$password) throw new Exception('请输入密码');
+    if (strlen($password) < 4) throw new Exception('密码至少4个字符');
+
+    $hash = password_hash($password, PASSWORD_DEFAULT);
+    $db = getDb();
+
+    $stmt = $db->prepare("INSERT OR REPLACE INTO settings (key_name, value) VALUES (?,?)");
+    $stmt->execute(['web_username', $username]);
+
+    $stmt = $db->prepare("INSERT OR REPLACE INTO settings (key_name, value) VALUES (?,?)");
+    $stmt->execute(['web_password', $hash]);
+
+    // 自动登录
+    initSession();
+    $_SESSION['authenticated'] = true;
+    $_SESSION['username'] = $username;
+    session_regenerate_id(true);
+
+    return ['success' => true, 'message' => '设置成功，已自动登录'];
+}
+
+/**
+ * 修改密码（需要当前密码验证）
+ */
+function apiChangePassword(): array {
+    $input = json_decode(file_get_contents('php://input'), true);
+    if (!$input) throw new Exception('无效的请求数据');
+
+    $currentPassword = $input['current_password'] ?? '';
+    $newPassword = $input['new_password'] ?? '';
+    $newUsername = trim($input['new_username'] ?? '');
+
+    if (!$currentPassword) throw new Exception('请输入当前密码');
+    if (!$newPassword) throw new Exception('请输入新密码');
+    if (strlen($newPassword) < 4) throw new Exception('新密码至少4个字符');
+
+    $storedHash = getWebPassword();
+    if (!password_verify($currentPassword, $storedHash)) {
+        throw new Exception('当前密码错误');
+    }
+
+    $newHash = password_hash($newPassword, PASSWORD_DEFAULT);
+    $db = getDb();
+
+    if ($newUsername) {
+        $stmt = $db->prepare("INSERT OR REPLACE INTO settings (key_name, value) VALUES (?,?)");
+        $stmt->execute(['web_username', $newUsername]);
+        $_SESSION['username'] = $newUsername;
+    }
+
+    $stmt = $db->prepare("INSERT OR REPLACE INTO settings (key_name, value) VALUES (?,?)");
+    $stmt->execute(['web_password', $newHash]);
+
+    return ['success' => true, 'message' => '密码已修改'];
 }
 
 // =================== API Functions ===================

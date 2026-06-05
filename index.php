@@ -14,62 +14,114 @@
     <!-- 背景网格 -->
     <div class="bg-grid"></div>
 
-    <!-- 侧边栏 -->
-    <aside class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <div class="logo">
-                <span class="logo-icon">⏰</span>
-                <span class="logo-text">到期提醒</span>
+    <!-- ========== 登录/注册遮罩 ========== -->
+    <div class="auth-overlay" id="authOverlay">
+        <div class="auth-card" id="authCard">
+            <!-- 设置密码界面 -->
+            <div class="auth-panel" id="authSetup">
+                <div class="auth-icon">🔐</div>
+                <h2 class="auth-title">初始设置</h2>
+                <p class="auth-desc">首次使用，请设置登录账号和密码</p>
+                <div class="auth-form">
+                    <div class="form-group">
+                        <label class="form-label">账号</label>
+                        <input class="form-input" id="setupUsername" placeholder="输入管理账号" autocomplete="username">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">密码</label>
+                        <input class="form-input" type="password" id="setupPassword" placeholder="输入登录密码（至少4位）" autocomplete="new-password">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">确认密码</label>
+                        <input class="form-input" type="password" id="setupPassword2" placeholder="再次输入密码" autocomplete="new-password">
+                    </div>
+                    <button class="btn btn-primary auth-btn" onclick="Auth.setup()">🔒 确认设置</button>
+                </div>
+            </div>
+
+            <!-- 登录界面 -->
+            <div class="auth-panel" id="authLogin" style="display:none;">
+                <div class="auth-icon">⏰</div>
+                <h2 class="auth-title">到期提醒系统</h2>
+                <p class="auth-desc">请输入账号密码登录</p>
+                <div class="auth-form">
+                    <div class="form-group">
+                        <label class="form-label">账号</label>
+                        <input class="form-input" id="loginUsername" placeholder="输入账号" autocomplete="username">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">密码</label>
+                        <input class="form-input" type="password" id="loginPassword" placeholder="输入密码" autocomplete="current-password">
+                    </div>
+                    <button class="btn btn-primary auth-btn" onclick="Auth.login()">🔓 登录</button>
+                </div>
             </div>
         </div>
-        <nav class="sidebar-nav">
-            <a href="#" class="nav-item active" data-page="dashboard">
-                <span class="nav-icon">📊</span>
-                <span class="nav-label">仪表盘</span>
-            </a>
-            <a href="#" class="nav-item" data-page="server">
-                <span class="nav-icon">🖥️</span>
-                <span class="nav-label">云服务器</span>
-            </a>
-            <a href="#" class="nav-item" data-page="certificate">
-                <span class="nav-icon">🔒</span>
-                <span class="nav-label">SSL证书</span>
-            </a>
-            <a href="#" class="nav-item" data-page="icp">
-                <span class="nav-icon">📄</span>
-                <span class="nav-label">ICP备案</span>
-            </a>
-            <a href="#" class="nav-item" data-page="birthday">
-                <span class="nav-icon">🎂</span>
-                <span class="nav-label">生日提醒</span>
-            </a>
-            <a href="#" class="nav-item" data-page="other">
-                <span class="nav-icon">📋</span>
-                <span class="nav-label">其他提醒</span>
-            </a>
-            <div class="nav-divider"></div>
-            <a href="#" class="nav-item" data-page="settings">
-                <span class="nav-icon">⚙️</span>
-                <span class="nav-label">系统设置</span>
-            </a>
-            <a href="#" class="nav-item" data-page="logs">
-                <span class="nav-icon">📝</span>
-                <span class="nav-label">发送日志</span>
-            </a>
-        </nav>
-        <div class="sidebar-footer">
-            <span class="version">v1.0.0</span>
-        </div>
-    </aside>
+    </div>
 
-    <!-- 移动端菜单按钮 -->
-    <button class="menu-toggle" id="menuToggle">☰</button>
+    <!-- ========== 主应用（初始隐藏） ========== -->
+    <div id="appContainer" style="display:none;">
+        <!-- 侧边栏 -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <span class="logo-icon">⏰</span>
+                    <span class="logo-text">到期提醒</span>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-page="dashboard">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-label">仪表盘</span>
+                </a>
+                <a href="#" class="nav-item" data-page="server">
+                    <span class="nav-icon">🖥️</span>
+                    <span class="nav-label">云服务器</span>
+                </a>
+                <a href="#" class="nav-item" data-page="certificate">
+                    <span class="nav-icon">🔒</span>
+                    <span class="nav-label">SSL证书</span>
+                </a>
+                <a href="#" class="nav-item" data-page="icp">
+                    <span class="nav-icon">📄</span>
+                    <span class="nav-label">ICP备案</span>
+                </a>
+                <a href="#" class="nav-item" data-page="birthday">
+                    <span class="nav-icon">🎂</span>
+                    <span class="nav-label">生日提醒</span>
+                </a>
+                <a href="#" class="nav-item" data-page="other">
+                    <span class="nav-icon">📋</span>
+                    <span class="nav-label">其他提醒</span>
+                </a>
+                <div class="nav-divider"></div>
+                <a href="#" class="nav-item" data-page="settings">
+                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-label">系统设置</span>
+                </a>
+                <a href="#" class="nav-item" data-page="logs">
+                    <span class="nav-icon">📝</span>
+                    <span class="nav-label">发送日志</span>
+                </a>
+                <div class="nav-divider"></div>
+                <a href="#" class="nav-item" onclick="Auth.logout()" style="color:var(--text-muted);">
+                    <span class="nav-icon">🚪</span>
+                    <span class="nav-label">退出登录</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <span class="version">v1.0.0</span>
+            </div>
+        </aside>
 
-    <!-- 主内容区 -->
-    <main class="main-content" id="mainContent">
-        <!-- 页面容器 -->
-        <div id="pageContainer"></div>
-    </main>
+        <!-- 移动端菜单按钮 -->
+        <button class="menu-toggle" id="menuToggle">☰</button>
+
+        <!-- 主内容区 -->
+        <main class="main-content" id="mainContent">
+            <div id="pageContainer"></div>
+        </main>
+    </div>
 
     <!-- 模态框 -->
     <div class="modal-overlay" id="modalOverlay">

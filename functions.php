@@ -6,6 +6,50 @@
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/smtp.php';
 
+// =================== 认证相关 ===================
+
+function initSession(): void {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+}
+
+function isAuthenticated(): bool {
+    initSession();
+    return isset($_SESSION['authenticated']) && $_SESSION['authenticated'] === true;
+}
+
+function requireAuth(): void {
+    if (!isAuthenticated()) {
+        http_response_code(401);
+        echo json_encode(['success' => false, 'message' => '请先登录']);
+        exit;
+    }
+}
+
+function getWebPassword(): string {
+    $db = getDb();
+    $stmt = $db->prepare("SELECT value FROM settings WHERE key_name = ?");
+    $stmt->execute(['web_password']);
+    $row = $stmt->fetch();
+    return $row ? $row['value'] : '';
+}
+
+function getWebUsername(): string {
+    $db = getDb();
+    $stmt = $db->prepare("SELECT value FROM settings WHERE key_name = ?");
+    $stmt->execute(['web_username']);
+    $row = $stmt->fetch();
+    return $row ? $row['value'] : '';
+}
+
+/**
+ * 检查是否需要设置密码（首次使用）
+ */
+function isPasswordSet(): bool {
+    return getWebPassword() !== '';
+}
+
 // =================== Helper Functions ===================
 
 function daysLeft(string $date): int {

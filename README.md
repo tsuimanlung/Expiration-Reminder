@@ -14,7 +14,7 @@
 </p>
 
 <p align="center">
-  <strong>🔗 生产环境：</strong> <a href="http://152.69.196.73:8080">http://152.69.196.73:8080</a>
+  <em>生产环境已部署</em>
 </p>
 
 <p align="center">

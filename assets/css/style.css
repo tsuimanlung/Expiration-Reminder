@@ -80,6 +80,87 @@ body {
     background-size: 60px 60px;
 }
 
+/* =====================================
+   Auth / Login Overlay
+   ===================================== */
+.auth-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(6, 11, 36, 0.85);
+    backdrop-filter: blur(8px);
+}
+
+.auth-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 40px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    animation: slideUp 0.4s ease;
+}
+
+.auth-panel {
+    text-align: center;
+}
+
+.auth-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.auth-title {
+    font-size: 22px;
+    font-weight: 700;
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+}
+
+.auth-desc {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 28px;
+}
+
+.auth-form {
+    text-align: left;
+}
+
+.auth-form .form-group {
+    margin-bottom: 16px;
+}
+
+.auth-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 12px;
+    font-size: 15px;
+    margin-top: 8px;
+}
+
+.auth-error {
+    color: var(--danger);
+    font-size: 13px;
+    margin-top: 12px;
+    text-align: center;
+}
+
+/* Enter key hint on login forms */
+.auth-form .form-input:last-of-type {
+    margin-bottom: 4px;
+}
+
 /* --- Scrollbar --- */
 ::-webkit-scrollbar {
     width: 6px;

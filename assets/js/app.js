@@ -154,7 +154,14 @@ const Utils = {
         }
         const res = await fetch(url, options);
         const json = await res.json();
-        if (!json.success) throw new Error(json.message || '请求失败');
+        if (!json.success) {
+            // 401 未登录 - 显示登录页
+            if (res.status === 401) {
+                Auth.showLogin();
+                throw new Error('请先登录');
+            }
+            throw new Error(json.message || '请求失败');
+        }
         return json.data || json;
     },
 
@@ -238,6 +245,90 @@ const Utils = {
 };
 
 // =====================================
+// 认证管理
+// =====================================
+const Auth = {
+    async check() {
+        try {
+            return await Utils.api('check_auth');
+        } catch(e) {
+            return { authenticated: false, password_set: false };
+        }
+    },
+
+    showLogin() {
+        document.getElementById('authOverlay').style.display = 'flex';
+        document.getElementById('appContainer').style.display = 'none';
+        const pw = document.getElementById('loginPassword');
+        if (pw) pw.value = '';
+    },
+
+    showSetup() {
+        document.getElementById('authOverlay').style.display = 'flex';
+        document.getElementById('appContainer').style.display = 'none';
+        document.getElementById('authLogin').style.display = 'none';
+        document.getElementById('authSetup').style.display = 'block';
+    },
+
+    async login() {
+        const username = document.getElementById('loginUsername').value.trim();
+        const password = document.getElementById('loginPassword').value;
+        if (!username) { Utils.toast('请输入账号', 'error'); return; }
+        if (!password) { Utils.toast('请输入密码', 'error'); return; }
+
+        try {
+            Utils.showLoader(true);
+            await Utils.api('login', { username, password });
+            Utils.toast('登录成功', 'success');
+            document.getElementById('authOverlay').style.display = 'none';
+            document.getElementById('appContainer').style.display = 'flex';
+            await App.initApp();
+        } catch (e) {
+            Utils.toast(e.message, 'error');
+        } finally {
+            Utils.showLoader(false);
+        }
+    },
+
+    async setup() {
+        const username = document.getElementById('setupUsername').value.trim();
+        const password = document.getElementById('setupPassword').value;
+        const password2 = document.getElementById('setupPassword2').value;
+
+        if (!username) { Utils.toast('请输入账号', 'error'); return; }
+        if (!password) { Utils.toast('请输入密码', 'error'); return; }
+        if (password.length < 4) { Utils.toast('密码至少4个字符', 'error'); return; }
+        if (password !== password2) { Utils.toast('两次密码不一致', 'error'); return; }
+
+        try {
+            Utils.showLoader(true);
+            await Utils.api('setup_password', { username, password });
+            Utils.toast('设置成功', 'success');
+            document.getElementById('authOverlay').style.display = 'none';
+            document.getElementById('appContainer').style.display = 'flex';
+            await App.initApp();
+        } catch (e) {
+            Utils.toast(e.message, 'error');
+        } finally {
+            Utils.showLoader(false);
+        }
+    },
+
+    async logout() {
+        if (!confirm('确定要退出登录吗？')) return;
+        try {
+            await Utils.api('logout', {});
+            document.getElementById('authOverlay').style.display = 'flex';
+            document.getElementById('authLogin').style.display = 'block';
+            document.getElementById('authSetup').style.display = 'none';
+            document.getElementById('appContainer').style.display = 'none';
+        } catch(e) {
+            Utils.toast(e.message, 'error');
+        }
+    }
+};
+
+// =====================================
 // 模态框管理
 // =====================================
 const Modal = {
@@ -288,9 +379,47 @@ const App = {
     currentPage: 'dashboard',
 
     async init() {
-        // 初始化粒子效果
+        // 粒子背景始终显示
         new ParticleEffect();
 
+        // 检查认证状态
+        try {
+            const auth = await Auth.check();
+
+            if (!auth.password_set) {
+                Auth.showSetup();
+                // 绑定回车键
+                document.getElementById('setupPassword2').addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') Auth.setup();
+                });
+                document.getElementById('setupPassword').addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') document.getElementById('setupPassword2').focus();
+                });
+                return;
+            }
+
+            if (!auth.authenticated) {
+                Auth.showLogin();
+                document.getElementById('loginPassword').addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') Auth.login();
+                });
+                document.getElementById('loginUsername').addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') document.getElementById('loginPassword').focus();
+                });
+                return;
+            }
+
+            // 已登录：初始化主应用
+            document.getElementById('authOverlay').style.display = 'none';
+            document.getElementById('appContainer').style.display = 'flex';
+            await this.initApp();
+
+        } catch (e) {
+            Auth.showLogin();
+        }
+    },
+
+    async initApp() {
         // 绑定导航
         document.querySelectorAll('.nav-item').forEach(item => {
             item.addEventListener('click', (e) => {
@@ -862,6 +991,31 @@ const App = {
             </div>
 
             <div class="settings-card">
+                <div class="settings-section-title">🔐 账号安全</div>
+                <div class="form-group">
+                    <label class="form-label">新账号（可选）</label>
+                    <input class="form-input" id="setNewUsername" placeholder="留空则不修改">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">当前密码</label>
+                    <input class="form-input" type="password" id="setCurrentPw" placeholder="输入当前密码">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">新密码</label>
+                        <input class="form-input" type="password" id="setNewPw" placeholder="至少4位">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">确认新密码</label>
+                        <input class="form-input" type="password" id="setNewPw2" placeholder="再次输入">
+                    </div>
+                </div>
+                <div style="display:flex;gap:10px;">
+                    <button class="btn btn-primary" onclick="App.changePassword()">🔑 修改密码</button>
+                </div>
+            </div>
+
+            <div class="settings-card">
                 <div class="settings-section-title">📖 使用说明</div>
                 <div style="font-size:14px;color:var(--text-secondary);line-height:1.8;">
                     <p>1. <strong>配置邮箱</strong>：填写QQ邮箱和授权码，点击"发送测试邮件"验证。</p>
@@ -930,6 +1084,29 @@ const App = {
             Utils.toast('✅ 测试邮件发送成功！请检查收件箱（注意查看垃圾邮件）', 'success');
         } catch (e) {
             Utils.toast('发送失败: ' + e.message, 'error');
+        } finally {
+            Utils.showLoader(false);
+        }
+    },
+
+    async changePassword() {
+        const currentPw = document.getElementById('setCurrentPw').value;
+        const newPw = document.getElementById('setNewPw').value;
+        const newPw2 = document.getElementById('setNewPw2').value;
+        const newUsername = document.getElementById('setNewUsername').value.trim();
+        if (!currentPw) { Utils.toast('请输入当前密码', 'error'); return; }
+        if (!newPw) { Utils.toast('请输入新密码', 'error'); return; }
+        if (newPw.length < 4) { Utils.toast('新密码至少4个字符', 'error'); return; }
+        if (newPw !== newPw2) { Utils.toast('两次新密码不一致', 'error'); return; }
+        try {
+            Utils.showLoader(true);
+            await Utils.api('change_password', { current_password: currentPw, new_password: newPw, new_username: newUsername });
+            Utils.toast('密码已修改', 'success');
+            document.getElementById('setCurrentPw').value = '';
+            document.getElementById('setNewPw').value = '';
+            document.getElementById('setNewPw2').value = '';
+        } catch (e) {
+            Utils.toast(e.message, 'error');
         } finally {
             Utils.showLoader(false);
         }
