@@ -3,6 +3,7 @@
   <img src="https://img.shields.io/badge/SQLite-3-003B57?style=flat-square&logo=sqlite" alt="SQLite">
   <img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="License">
   <img src="https://img.shields.io/badge/status-stable-brightgreen?style=flat-square" alt="Status">
+  <img src="https://img.shields.io/badge/Nginx-1.20-009639?style=flat-square&logo=nginx" alt="Nginx">
 </p>
 
 <h1 align="center">⏰ Expiration Reminder</h1>
@@ -10,6 +11,10 @@
 
 <p align="center">
   一款功能强大的到期提醒管理工具，支持多类型到期监控、多级邮件自动通知，拥有酷炫的蓝色粒子动态界面。
+</p>
+
+<p align="center">
+  <strong>🌐 在线演示：</strong> <a href="http://152.69.196.73:8080">http://152.69.196.73:8080</a>
 </p>
 
 <p align="center">
@@ -82,8 +87,10 @@
 git clone https://github.com/tsuimanlung/Expiration-Reminder.git
 cd Expiration-Reminder
 
-# 2. 确保 data 目录可写
-chmod 755 data/
+# 2. 确保 data 目录存在且可写
+mkdir -p data
+chmod -R 755 .
+chmod -R 777 data/
 
 # 3. 启动开发服务器测试
 php -S 0.0.0.0:8080
@@ -98,50 +105,95 @@ php -S 0.0.0.0:8080
 
 ## 📦 部署指南
 
-### Nginx 配置
+### CentOS 7 部署（以本文 VPS 为例）
+
+#### 1️⃣ 安装 PHP 8.0
+
+```bash
+# 安装 EPEL 和 REMI 源
+yum install -y epel-release
+yum install -y https://rpms.remirepo.net/enterprise/remi-release-7.rpm
+yum install -y yum-utils
+yum-config-manager --enable remi-php80
+
+# 安装 PHP 及必要扩展
+yum install -y php php-cli php-pdo php-sqlite3 php-mbstring php-openssl php-fpm
+
+# 启动 PHP-FPM
+systemctl start php-fpm
+systemctl enable php-fpm
+```
+
+#### 2️⃣ 配置 Nginx
 
 ```nginx
 server {
-    listen 80;
-    server_name your-domain.com;
-    root /path/to/Expiration-Reminder;
-    index index.php;
+    listen       8080;
+    listen       [::]:8080;
+    server_name  _;
+
+    root         /var/www/Expiration-Reminder;
+    index        index.php index.html;
 
     location / {
         try_files $uri $uri/ /index.php?$query_string;
     }
 
     location ~ \.php$ {
-        fastcgi_pass unix:/var/run/php/php8.1-fpm.sock;
-        fastcgi_index index.php;
-        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-        include fastcgi_params;
+        fastcgi_pass   127.0.0.1:9000;
+        fastcgi_index  index.php;
+        fastcgi_param  SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+        include        fastcgi_params;
     }
 }
 ```
 
-### Apache 配置
-
-在项目目录创建 `.htaccess`：
-
-```apache
-RewriteEngine On
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ index.php [QSA,L]
+```bash
+# 测试并重载 Nginx
+nginx -t && systemctl reload nginx
 ```
 
-### 设置定时任务（自动提醒）
+#### 3️⃣ 设置目录权限
 
 ```bash
-# 编辑 crontab
-crontab -e
-
-# 每天上午 8:00 自动检查并发送提醒
-0 8 * * * /usr/bin/php /path/to/Expiration-Reminder/cron.php
+chmod -R 755 /var/www/Expiration-Reminder/
+chown -R nginx:nginx /var/www/Expiration-Reminder/data/
+chmod -R 777 /var/www/Expiration-Reminder/data/
 ```
 
-> **提示**：部署后建议先通过 设置 → 发送测试邮件 验证邮件配置。
+#### 4️⃣ 设置 PHP 时区
+
+```bash
+# 修改 php.ini
+vi /etc/php.ini
+# 找到 ;date.timezone = 改为 date.timezone = Asia/Shanghai
+
+# 重启 PHP-FPM
+systemctl restart php-fpm
+```
+
+#### 5️⃣ 配置定时任务（自动发邮件）
+
+```bash
+crontab -e
+```
+
+添加以下行（每天晚 8 点自动检查）：
+
+```
+0 20 * * * /usr/bin/php /var/www/Expiration-Reminder/cron.php
+```
+
+#### 6️⃣ 防火墙放行端口
+
+```bash
+firewall-cmd --add-port=8080/tcp --permanent
+firewall-cmd --reload
+```
+
+### 通用 Nginx 配置
+
+适用于 Debian/Ubuntu 等其他系统：
 
 ---
 
