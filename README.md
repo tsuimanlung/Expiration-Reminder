@@ -198,6 +198,25 @@ firewall-cmd --reload
 
 > **首次访问**：部署完成后打开网站，会引导您设置登录账号和密码，请务必牢记。
 
+#### 7️⃣ 代码更新
+
+```bash
+cd /var/www/Expiration-Reminder
+git pull
+systemctl restart php-fpm
+# 如果 data/ 权限被重置：
+chmod -R 777 data/
+```
+
+> 每次从 GitHub 拉取更新后，执行以上命令即可完成部署同步。
+>
+> 如果出现 `error: Your local changes...` 报错，说明 VPS 上有本地修改：
+> ```bash
+> git stash        # 暂存本地修改
+> git pull         # 拉取最新代码
+> git stash pop    # 恢复本地修改（如有冲突需手动解决）
+> ```
+
 ### 通用 Nginx 配置
 
 适用于 Debian/Ubuntu 等其他系统：
