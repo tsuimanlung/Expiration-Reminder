@@ -224,9 +224,9 @@ function apiGetDashboard(): array {
         $statsData[$typeMap[$s['type']] ?? $s['type']] = (int)$s['count'];
     }
 
-    // 即将到期（30天内）
-    $upcoming = $db->prepare("SELECT * FROM items WHERE enabled=1 AND expiry_date >= ? AND expiry_date <= ? ORDER BY expiry_date ASC LIMIT 20");
-    $upcoming->execute([$now, $monthLater]);
+    // 即将到期（30天内 + 已过期）
+    $upcoming = $db->prepare("SELECT * FROM items WHERE enabled=1 AND expiry_date <= ? ORDER BY expiry_date ASC LIMIT 20");
+    $upcoming->execute([$monthLater]);
     $upcomingList = [];
     foreach ($upcoming->fetchAll() as $row) {
         $row['details'] = json_decode($row['details'] ?? '{}', true) ?: [];

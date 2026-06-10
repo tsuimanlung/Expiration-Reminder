@@ -499,32 +499,37 @@ const App = {
 
         const upcomingHtml = upcoming.length > 0 ? upcoming.map(item => {
             const days = Utils.daysLeft(item.expiry_date);
-            const cls = days <= 7 ? 'urgent' : days <= 30 ? 'warning' : '';
+            const cls = days < 0 ? 'expired' : days <= 7 ? 'urgent' : days <= 30 ? 'warning' : 'safe';
             return `
-                <div class="timeline-item ${cls}">
-                    <div class="timeline-date">${Utils.escapeHtml(Utils.formatDateCN(item.expiry_date))}</div>
-                    <div class="timeline-title">${Utils.daysIcon(days)} ${Utils.escapeHtml(item.name)} <span class="badge ${Utils.badgeClass(item.type)}">${item.type_label}</span></div>
-                    <div class="timeline-desc">
-                        ${days < 0 ? `<span style="color:var(--danger)">已过期 ${Math.abs(days)} 天</span>` :
-                          days === 0 ? '<span style="color:var(--danger)">今天到期</span>' :
-                          days <= 7 ? `<span style="color:var(--danger)">${days} 天后到期</span>` :
-                          days <= 30 ? `<span style="color:var(--warning)">${days} 天后到期</span>` :
-                          `<span style="color:var(--success)">${days} 天后到期</span>`}
+                <div class="upcoming-card ${cls}" onclick="App.navigate('${item.type}')">
+                    <div class="upcoming-icon">${Utils.typeIcon(item.type)}</div>
+                    <div class="upcoming-info">
+                        <div class="upcoming-name">${Utils.escapeHtml(item.name)}</div>
+                        <div class="upcoming-meta">
+                            <span class="badge ${Utils.badgeClass(item.type)}">${item.type_label}</span>
+                            <span class="upcoming-date">${Utils.formatDate(item.expiry_date)}</span>
+                        </div>
+                    </div>
+                    <div class="upcoming-days ${Utils.daysClass(days)}">
+                        <span class="upcoming-days-num">${days < 0 ? Math.abs(days) : days}</span>
+                        <span class="upcoming-days-label">${days < 0 ? '天前过期' : days === 0 ? '今天到期' : '天后'}</span>
                     </div>
                 </div>
             `;
-        }).join('') : '<div class="empty-state" style="padding:30px 0"><div class="empty-state-icon" style="font-size:40px">🎉</div><div class="empty-state-title">没有即将到期的项目</div></div>';
+        }).join('') : '<div class="empty-state" style="padding:20px 0;grid-column:1/-1;"><div class="empty-state-icon" style="font-size:32px">🎉</div><div class="empty-state-title" style="font-size:14px">没有即将到期或已过期的项目</div></div>';
 
         const logsHtml = recent_logs.length > 0 ? recent_logs.map(log => `
             <div class="log-item ${log.status}">
                 <div class="log-icon">${log.status === 'success' ? '✅' : '❌'}</div>
                 <div class="log-info">
                     <div class="log-title">${Utils.escapeHtml(log.item_name || '已删除')}</div>
-                    <div class="log-meta">提前 ${log.reminder_day} 天提醒 · ${log.status === 'success' ? '发送成功' : '失败: ' + Utils.escapeHtml(log.message)}</div>
+                    <div class="log-meta">提前 ${log.reminder_day} 天 · ${log.status === 'success' ? '成功' : Utils.escapeHtml(log.message)}</div>
                 </div>
-                <div class="log-time">${log.created_at}</div>
+                <div class="log-time">${log.created_at ? log.created_at.substring(5,16) : ''}</div>
             </div>
-        `).join('') : '<div class="empty-state" style="padding:20px 0"><p style="font-size:14px">暂无发送记录</p></div>';
+        `).join('') : '<div class="empty-state" style="padding:15px 0"><p style="font-size:13px;color:var(--text-muted)">暂无发送记录</p></div>';
+
+        const expiredCount = upcoming.filter(i => Utils.daysLeft(i.expiry_date) < 0).length;
 
         container.innerHTML = `
             <div class="page-header">
@@ -537,23 +542,30 @@ const App = {
                 </div>
             </div>
 
-            <div class="stats-grid">${statsHtml}</div>
-
-            <div class="card" style="margin-bottom:24px">
-                <div class="card-header">
-                    <h3 class="card-title">⏰ 即将到期</h3>
+            <div class="dash-row">
+                <div class="dash-col dash-col-main">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">⏰ 到期 & 已过期</h3>
+                            <div style="display:flex;gap:6px;">
+                                ${expiredCount > 0 ? `<span class="badge badge-server" style="font-size:11px;background:rgba(244,67,54,0.2);color:#f44336;">🔴 ${expiredCount} 已过期</span>` : ''}
+                                ${upcoming.length > 0 ? `<span class="badge badge-other" style="font-size:11px;">${upcoming.length} 项</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="card-body upcoming-grid">${upcomingHtml}</div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <div class="timeline">${upcomingHtml}</div>
+                <div class="dash-col dash-col-side">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">📬 最近发送</h3>
+                        </div>
+                        <div class="card-body">${logsHtml}</div>
+                    </div>
                 </div>
             </div>
 
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">📬 最近发送记录</h3>
-                </div>
-                <div class="card-body">${logsHtml}</div>
-            </div>
+            <div class="stats-grid" style="margin-top:20px;">${statsHtml}</div>
         `;
     },
 
