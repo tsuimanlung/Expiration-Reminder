@@ -788,10 +788,8 @@ const App = {
                     </div>
                 </div>
                 <div id="solarDateFields" style="${isLunar ? 'display:none;' : ''}">
-                    <div class="form-group">
-                        <label class="form-label">🎂 公历生日</label>
-                        <input class="form-input" type="date" id="formExpiry" value="${item?.expiry_date || ''}">
-                        <div class="form-hint">选出生日期即可，系统会每年自动提醒</div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <div class="form-hint">💡 下方选择公历出生日期，系统每年自动提醒</div>
                     </div>
                 </div>
             `;
@@ -818,8 +816,9 @@ const App = {
 
             <div class="form-row">
                 <div class="form-group">
-                    <label class="form-label">📅 到期日期</label>
+                    <label class="form-label">${type === 'birthday' ? '🎂 出生日期' : '📅 到期日期'}</label>
                     <input class="form-input" type="date" id="formExpiry" value="${item?.expiry_date || ''}">
+                    ${type === 'birthday' ? '<div class="form-hint">选出生日期即可，系统会每年自动提醒</div>' : ''}
                 </div>
                 <div class="form-group">
                     <label class="form-label">📧 邮件提醒</label>
