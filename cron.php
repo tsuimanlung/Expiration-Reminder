@@ -148,10 +148,15 @@ function checkAndSendReminders(): array {
 
         // 处理生日：自动更新为下一年的日期
         if ($item['type'] === 'birthday' && $daysLeft < 0) {
-            // 生日已过，更新到下一年
-            $nextYear = date('Y-m-d', strtotime($expiryDate . ' +1 year'));
+            // 生日已过，更新到下一年（支持农历）
+            $det = json_decode($item['details'] ?? '{}', true) ?: [];
+            $isLunar = !empty($det['is_lunar']);
+            $bDate = $expiryDate;
+            if ($isLunar && !empty($det['lunar_mm']) && !empty($det['lunar_dd'])) {
+                $bDate = sprintf('%02d-%02d', (int)$det['lunar_mm'], (int)$det['lunar_dd']);
+            }
             $updateStmt = $db->prepare("UPDATE items SET expiry_date = ? WHERE id = ?");
-            $updateStmt->execute([$nextYear, $item['id']]);
+            $updateStmt->execute([getNextBirthday($bDate, $isLunar), $item['id']]);
         }
     }
 

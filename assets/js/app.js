@@ -652,6 +652,7 @@ const App = {
             <tr>
                 <td>
                     <strong>${Utils.escapeHtml(item.name)}</strong>
+                    ${item.type === 'birthday' && details.is_lunar ? '<span class="badge badge-birthday" style="font-size:10px;padding:1px 6px;margin-left:4px;">农历</span>' : ''}
                     ${item.notes ? `<br><span style="font-size:12px;color:var(--text-muted)">${Utils.escapeHtml(item.notes.substring(0, 30))}</span>` : ''}
                 </td>
                 ${extraCol}
@@ -755,6 +756,47 @@ const App = {
             `;
         }
 
+        if (type === 'birthday') {
+            const isLunar = item?.details?.is_lunar || false;
+            const lunarMm = item?.details?.lunar_mm || '';
+            const lunarDd = item?.details?.lunar_dd || '';
+            extraFields = `
+                <div class="form-group">
+                    <label class="form-label">📅 历法类型</label>
+                    <div style="display:flex;gap:12px;margin-top:6px;">
+                        <label class="form-switch">
+                            <input type="checkbox" id="formIsLunar" onchange="App.toggleLunar()" ${isLunar ? 'checked' : ''}>
+                            <span class="switch-track"></span>
+                            <span style="font-size:13px;color:var(--text-secondary)">农历</span>
+                        </label>
+                    </div>
+                </div>
+                <div id="lunarDateFields" style="${isLunar ? '' : 'display:none;'}">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">农历月</label>
+                            <select class="form-select" id="formLunarMm">
+                                ${Array.from({length:12}, (_,i) => `<option value="${i+1}" ${lunarMm == i+1 ? 'selected' : ''}>${i+1}月</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">农历日</label>
+                            <select class="form-select" id="formLunarDd">
+                                ${Array.from({length:30}, (_,i) => `<option value="${i+1}" ${lunarDd == i+1 ? 'selected' : ''}>${i+1}日</option>`).join('')}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div id="solarDateFields" style="${isLunar ? 'display:none;' : ''}">
+                    <div class="form-group">
+                        <label class="form-label">🎂 公历生日</label>
+                        <input class="form-input" type="date" id="formExpiry" value="${item?.expiry_date || ''}">
+                        <div class="form-hint">选出生日期即可，系统会每年自动提醒</div>
+                    </div>
+                </div>
+            `;
+        }
+
         // 提醒天数选择
         const allDays = [365, 180, 90, 60, 30, 15, 7, 3, 1];
         const reminderChips = allDays.map(d => `
@@ -825,15 +867,28 @@ const App = {
         const id = parseInt(document.getElementById('formId').value);
         const type = document.getElementById('formType').value;
         const name = document.getElementById('formName').value.trim();
-        const expiryDate = document.getElementById('formExpiry').value;
+        let expiryDate = document.getElementById('formExpiry')?.value || '';
         const notes = document.getElementById('formNotes').value.trim();
         const notifyEmail = document.getElementById('formNotifyEmail').checked ? 1 : 0;
 
-        if (!name) { Utils.toast('请输入名称', 'error'); return false; }
-        if (!expiryDate) { Utils.toast('请选择到期日期', 'error'); return false; }
-
         // 收集细节信息
         const details = {};
+
+        // 生日提前处理：农历用月日格式
+        if (type === 'birthday') {
+            const isLunar = document.getElementById('formIsLunar')?.checked || false;
+            details.is_lunar = isLunar;
+            if (isLunar) {
+                details.lunar_mm = parseInt(document.getElementById('formLunarMm')?.value || '1');
+                details.lunar_dd = parseInt(document.getElementById('formLunarDd')?.value || '1');
+                const mm = String(details.lunar_mm).padStart(2,'0');
+                const dd = String(details.lunar_dd).padStart(2,'0');
+                expiryDate = mm + '-' + dd;
+            }
+        }
+
+        if (!name) { Utils.toast('请输入名称', 'error'); return false; }
+        if (!expiryDate) { Utils.toast('请选择到期日期', 'error'); return false; }
 
         if (type === 'server') {
             details.ip = document.getElementById('formIp')?.value.trim() || '';
@@ -904,6 +959,12 @@ const App = {
         nameInput.value = '';
         urlInput.value = '';
         nameInput.focus();
+    },
+
+    toggleLunar() {
+        const isLunar = document.getElementById('formIsLunar').checked;
+        document.getElementById('lunarDateFields').style.display = isLunar ? '' : 'none';
+        document.getElementById('solarDateFields').style.display = isLunar ? 'none' : '';
     },
 
     async deleteItem(id) {

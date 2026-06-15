@@ -343,6 +343,12 @@ function apiSaveItem(): array {
     if (!$name) throw new Exception('名称不能为空');
     if (!$expiryDate) throw new Exception('到期日期不能为空');
 
+    // 生日类型：自动计算下一次生日日期
+    if ($type === 'birthday') {
+        $isLunar = !empty($details['is_lunar']);
+        $expiryDate = getNextBirthday($expiryDate, $isLunar);
+    }
+
     $detailsJson = json_encode($details, JSON_UNESCAPED_UNICODE);
     $reminderDaysJson = json_encode(array_map('intval', $reminderDays), JSON_UNESCAPED_UNICODE);
 
