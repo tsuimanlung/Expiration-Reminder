@@ -349,6 +349,12 @@ function apiSaveItem(): array {
         $expiryDate = getNextBirthday($expiryDate, $isLunar);
     }
 
+    // 其他提醒：支持重复类型（每年/每月/每周）
+    $repeat = $details['repeat'] ?? 'none';
+    if ($type === 'other' && in_array($repeat, ['yearly','monthly','weekly'])) {
+        $expiryDate = getNextRepeatDate($repeat, $expiryDate);
+    }
+
     $detailsJson = json_encode($details, JSON_UNESCAPED_UNICODE);
     $reminderDaysJson = json_encode(array_map('intval', $reminderDays), JSON_UNESCAPED_UNICODE);
 

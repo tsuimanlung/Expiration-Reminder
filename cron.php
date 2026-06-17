@@ -148,7 +148,6 @@ function checkAndSendReminders(): array {
 
         // 处理生日：自动更新为下一年的日期
         if ($item['type'] === 'birthday' && $daysLeft < 0) {
-            // 生日已过，更新到下一年（支持农历）
             $det = json_decode($item['details'] ?? '{}', true) ?: [];
             $isLunar = !empty($det['is_lunar']);
             $bDate = $expiryDate;
@@ -157,6 +156,16 @@ function checkAndSendReminders(): array {
             }
             $updateStmt = $db->prepare("UPDATE items SET expiry_date = ? WHERE id = ?");
             $updateStmt->execute([getNextBirthday($bDate, $isLunar), $item['id']]);
+        }
+
+        // 处理其他提醒的重复类型（每年/每月/每周）
+        if ($item['type'] === 'other' && $daysLeft < 0) {
+            $det = json_decode($item['details'] ?? '{}', true) ?: [];
+            $repeat = $det['repeat'] ?? 'none';
+            if (in_array($repeat, ['yearly','monthly','weekly'])) {
+                $updateStmt = $db->prepare("UPDATE items SET expiry_date = ? WHERE id = ?");
+                $updateStmt->execute([getNextRepeatDate($repeat, $expiryDate), $item['id']]);
+            }
         }
     }
 

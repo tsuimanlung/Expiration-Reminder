@@ -756,6 +756,28 @@ const App = {
             `;
         }
 
+        if (type === 'other') {
+            const repeat = item?.details?.repeat || 'none';
+            const dowText = ['日','一','二','三','四','五','六'];
+            const expDow = item?.expiry_date ? new Date(item.expiry_date).getDay() : new Date().getDay();
+            extraFields = `
+                <div class="form-group">
+                    <label class="form-label">🔄 重复类型</label>
+                    <select class="form-select" id="formRepeat" onchange="App.toggleRepeat()">
+                        <option value="none" ${repeat === 'none' ? 'selected' : ''}>一次性（不重复）</option>
+                        <option value="yearly" ${repeat === 'yearly' ? 'selected' : ''}>每年重复</option>
+                        <option value="monthly" ${repeat === 'monthly' ? 'selected' : ''}>每月重复</option>
+                        <option value="weekly" ${repeat === 'weekly' ? 'selected' : ''}>每周重复</option>
+                    </select>
+                </div>
+                <div id="repeatHint" class="form-hint" style="margin-bottom:14px;${repeat === 'none' ? 'display:none' : ''}">
+                    ${repeat === 'yearly' ? '💡 每年当天自动提醒，到期后自动续期' :
+                      repeat === 'monthly' ? '💡 每月当天自动提醒（小月取最后一天）' :
+                      repeat === 'weekly' ? '💡 每周星期' + dowText[expDow] + '自动提醒' : ''}
+                </div>
+            `;
+        }
+
         if (type === 'birthday') {
             const isLunar = item?.details?.is_lunar || false;
             const lunarMm = item?.details?.lunar_mm || '';
@@ -886,6 +908,11 @@ const App = {
             }
         }
 
+        // 其他提醒：重复类型
+        if (type === 'other') {
+            details.repeat = document.getElementById('formRepeat')?.value || 'none';
+        }
+
         if (!name) { Utils.toast('请输入名称', 'error'); return false; }
         if (!expiryDate) { Utils.toast('请选择到期日期', 'error'); return false; }
 
@@ -964,6 +991,24 @@ const App = {
         const isLunar = document.getElementById('formIsLunar').checked;
         document.getElementById('lunarDateFields').style.display = isLunar ? '' : 'none';
         document.getElementById('solarDateFields').style.display = isLunar ? 'none' : '';
+    },
+
+    toggleRepeat() {
+        const sel = document.getElementById('formRepeat');
+        const hint = document.getElementById('repeatHint');
+        if (!sel || !hint) return;
+        const val = sel.value;
+        const expDate = document.getElementById('formExpiry')?.value || new Date().toISOString().split('T')[0];
+        const dowText = ['日','一','二','三','四','五','六'];
+        const dow = new Date(expDate).getDay();
+        const hints = {
+            'none': '',
+            'yearly': '💡 每年当天自动提醒，到期后自动续期',
+            'monthly': '💡 每月当天自动提醒（小月取最后一天）',
+            'weekly': '💡 每周星期' + dowText[dow] + '自动提醒',
+        };
+        hint.style.display = val === 'none' ? 'none' : '';
+        hint.textContent = hints[val] || '';
     },
 
     async deleteItem(id) {

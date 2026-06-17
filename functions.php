@@ -71,6 +71,45 @@ function getNextBirthday(string $birthDate, bool $isLunar = false): string {
     return ($cy + 1) . '-' . $md;
 }
 
+/**
+ * 计算下一个重复提醒日期
+ */
+function getNextRepeatDate(string $repeat, string $expiryDate): string {
+    if ($repeat === 'none') return $expiryDate;
+    $today = new DateTime('today');
+    $cy = (int)$today->format('Y');
+
+    if ($repeat === 'yearly') {
+        $md = count(explode('-', $expiryDate)) === 3 ? substr($expiryDate, 5) : $expiryDate;
+        $candidate = $cy . '-' . $md;
+        if ($candidate >= $today->format('Y-m-d')) return $candidate;
+        return ($cy + 1) . '-' . $md;
+    }
+
+    if ($repeat === 'monthly') {
+        $parts = explode('-', $expiryDate);
+        $day = (int)(count($parts) === 3 ? $parts[2] : $parts[0]);
+        $maxDay = (int)$today->format('t');
+        $targetDay = min($day, $maxDay);
+        $thisMonth = sprintf('%s-%02d-%02d', $cy, (int)$today->format('m'), $targetDay);
+        if ($thisMonth >= $today->format('Y-m-d')) return $thisMonth;
+        $next = new DateTime('first day of next month');
+        $maxNext = (int)$next->format('t');
+        return $next->format('Y-m') . '-' . sprintf('%02d', min($day, $maxNext));
+    }
+
+    if ($repeat === 'weekly') {
+        $targetDow = (int)date('w', strtotime($expiryDate));
+        $todayDow = (int)$today->format('w');
+        $diff = $targetDow - $todayDow;
+        if ($diff > 0) return $today->modify("+{$diff} days")->format('Y-m-d');
+        if ($diff < 0) return $today->modify("+" . ($diff + 7) . " days")->format('Y-m-d');
+        return $today->format('Y-m-d');
+    }
+
+    return $expiryDate;
+}
+
 // =================== 认证相关 ===================
 
 function initSession(): void {
