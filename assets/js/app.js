@@ -570,11 +570,11 @@ const App = {
             <div class="links-card">
                 <div class="links-header">🔗 常用链接</div>
                 <div class="links-body">
-                    <a href="https://tsuimanlung.github.io/gas_water/" target="_blank" class="link-item">
+                    <a href="http://170.106.105.65:8765/" target="_blank" class="link-item">
                         <span class="link-icon">🏠</span>
                         <span class="link-info">
                             <span class="link-name">中海原山 · 水电气消费记录</span>
-                            <span class="link-url">tsuimanlung.github.io/gas_water</span>
+                            <span class="link-url">170.106.105.65:8765</span>
                         </span>
                         <span class="link-arrow">↗</span>
                     </a>
