@@ -602,6 +602,14 @@ const App = {
                         </span>
                         <span class="link-arrow">↗</span>
                     </a>
+                    <a href="http://152.69.196.73:5000/" target="_blank" class="link-item">
+                        <span class="link-icon">🏡</span>
+                        <span class="link-info">
+                            <span class="link-name">Lewis' Houses</span>
+                            <span class="link-url">152.69.196.73:5000</span>
+                        </span>
+                        <span class="link-arrow">↗</span>
+                    </a>
                 </div>
             </div>
         `;
