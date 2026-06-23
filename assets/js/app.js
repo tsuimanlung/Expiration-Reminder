@@ -566,6 +566,44 @@ const App = {
             </div>
 
             <div class="stats-grid" style="margin-top:20px;">${statsHtml}</div>
+
+            <div class="links-card">
+                <div class="links-header">🔗 常用链接</div>
+                <div class="links-body">
+                    <a href="https://tsuimanlung.github.io/gas_water/" target="_blank" class="link-item">
+                        <span class="link-icon">🏠</span>
+                        <span class="link-info">
+                            <span class="link-name">中海原山 · 水电气消费记录</span>
+                            <span class="link-url">tsuimanlung.github.io/gas_water</span>
+                        </span>
+                        <span class="link-arrow">↗</span>
+                    </a>
+                    <a href="https://tsuimanlung.github.io/backup_tracker/" target="_blank" class="link-item">
+                        <span class="link-icon">💾</span>
+                        <span class="link-info">
+                            <span class="link-name">Backup Tracker · Daily Entry</span>
+                            <span class="link-url">tsuimanlung.github.io/backup_tracker</span>
+                        </span>
+                        <span class="link-arrow">↗</span>
+                    </a>
+                    <a href="https://tsuimanlung.github.io/aurorasoft_web/" target="_blank" class="link-item">
+                        <span class="link-icon">☀️</span>
+                        <span class="link-info">
+                            <span class="link-name">南京奥罗拉软件有限公司</span>
+                            <span class="link-url">tsuimanlung.github.io/aurorasoft_web</span>
+                        </span>
+                        <span class="link-arrow">↗</span>
+                    </a>
+                    <a href="http://152.69.196.73/index.html" target="_blank" class="link-item">
+                        <span class="link-icon">📡</span>
+                        <span class="link-info">
+                            <span class="link-name">工作站点健康度检查</span>
+                            <span class="link-url">152.69.196.73</span>
+                        </span>
+                        <span class="link-arrow">↗</span>
+                    </a>
+                </div>
+            </div>
         `;
     },
 
